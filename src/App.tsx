@@ -3,9 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
-import { Menu, X, ChevronDown, MapPin, Phone, Mail, ArrowRight, Scale, Briefcase, FileText, Shield, Users, Building2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Menu, X, ChevronDown, MapPin, Phone, Mail, ArrowRight, Scale, Briefcase, FileText, Shield, Users, Building2, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,35 +62,6 @@ function Navbar() {
   );
 }
 
-function FAQItem({ question, answer }: { question: string, answer: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="border-b border-neutral-200 py-6">
-      <button 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="flex justify-between items-center w-full text-left font-medium text-xl text-neutral-900 focus:outline-none"
-      >
-        {question}
-        <ChevronDown className={`transform transition-transform duration-300 shrink-0 ml-4 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <p className="pt-4 text-neutral-600 leading-relaxed">
-              {answer}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 const services = [
   { icon: Building2, title: "Direito Societário", desc: "Estruturação, governança e resolução de conflitos societários com visão estratégica." },
   { icon: Briefcase, title: "Fusões e Aquisições", desc: "Assessoria completa em operações de M&A, due diligence e negociações complexas." },
@@ -96,12 +71,129 @@ const services = [
   { icon: Shield, title: "Consultoria Preventiva", desc: "Mitigação de riscos legais e adequação à legislação vigente para o seu negócio." },
 ];
 
-const faqs = [
-  { q: "Como funciona a primeira consulta?", a: "A primeira consulta é uma reunião de alinhamento onde entenderemos a fundo o seu caso, analisaremos os documentos iniciais e traçaremos as possíveis estratégias jurídicas. Pode ser realizada presencialmente ou por videoconferência." },
-  { q: "O escritório atende clientes de outras cidades?", a: "Sim. Com o processo eletrônico e as ferramentas de comunicação atuais, prestamos assessoria jurídica para clientes e empresas em todo o território nacional." },
-  { q: "Qual o formato de cobrança dos honorários?", a: "Nossos honorários são estabelecidos de forma transparente após a análise da complexidade do caso. Trabalhamos com honorários contratuais fixos, por êxito ou modelos híbridos, sempre formalizados em contrato." },
-  { q: "Vocês atendem pessoas físicas ou apenas empresas?", a: "Atendemos ambos. Embora tenhamos forte atuação empresarial (Societário, Contratos, M&A), também prestamos serviços de excelência para pessoas físicas, especialmente em Planejamento Sucessório e demandas estratégicas." }
+const FAQ_ITEMS = [
+  { id: 1, question: "Como funciona a primeira consulta?", answer: "A primeira consulta é uma reunião de alinhamento onde entenderemos a fundo o seu caso, analisaremos os documentos iniciais e traçaremos as possíveis estratégias jurídicas. Pode ser realizada presencialmente ou por videoconferência." },
+  { id: 2, question: "O escritório atende clientes de outras cidades?", answer: "Sim. Com o processo eletrônico e as ferramentas de comunicação atuais, prestamos assessoria jurídica para clientes e empresas em todo o território nacional." },
+  { id: 3, question: "Qual o formato de cobrança dos honorários?", answer: "Nossos honorários são estabelecidos de forma transparente após a análise da complexidade do caso. Trabalhamos com honorários contratuais fixos, por êxito ou modelos híbridos, sempre formalizados em contrato." },
+  { id: 4, question: "Vocês atendem pessoas físicas ou apenas empresas?", answer: "Atendemos ambos. Embora tenhamos forte atuação empresarial (Societário, Contratos, M&A), também prestamos serviços de excelência para pessoas físicas, especialmente em Planejamento Sucessório e demandas estratégicas." }
 ];
+
+function FAQSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const toggleItem = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      if (!prefersReducedMotion) {
+        gsap.fromTo('.sticky-content', 
+          { y: 80, opacity: 0 },
+          { 
+            y: 0, 
+            opacity: 1, 
+            duration: 1.4, 
+            ease: "power4.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 70%",
+            }
+          }
+        );
+
+        gsap.fromTo('.faq-item',
+          { y: 40, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 1,
+            stagger: 0.15,
+            ease: "power3.out",
+            delay: 0.2,
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 60%",
+            }
+          }
+        );
+      } else {
+         gsap.fromTo(['.sticky-content', '.faq-item'], 
+          { opacity: 0 },
+          { 
+            opacity: 1, 
+            duration: 1,
+            stagger: 0.1,
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 70%",
+            }
+          }
+        );
+      }
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section id="duvidas" ref={containerRef} className="py-32 px-6 bg-[#EBE9E4] dark:bg-[#0a0a0a] text-neutral-900 dark:text-neutral-100">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        {/* COLUNA ESQUERDA (Sticky) */}
+        <div className="lg:col-span-4 relative">
+          <div className="sticky-content lg:sticky lg:top-32">
+            <span className="text-xs font-bold tracking-widest uppercase mb-4 block text-neutral-500 dark:text-neutral-400">Suporte</span>
+            <h2 className="font-serif text-6xl md:text-7xl lg:text-8xl mb-8 leading-[0.85] tracking-tight">
+              Dúvidas <br/> <span className="italic opacity-50">Frequentes</span>
+            </h2>
+            <a href="#contato" className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">
+              Fale Conosco <ArrowRight size={16} />
+            </a>
+          </div>
+        </div>
+
+        {/* COLUNA DIREITA (Lista) */}
+        <div className="lg:col-span-7 lg:col-start-6">
+          {FAQ_ITEMS.map((item, idx) => (
+            <div key={item.id} className="faq-item border-b border-black/10 dark:border-white/10">
+              <button 
+                onClick={() => toggleItem(idx)}
+                className="w-full py-10 flex justify-between items-center text-left group focus:outline-none"
+              >
+                <h3 className={`text-2xl md:text-3xl font-serif transition-all duration-500 ${openIndex === idx ? 'translate-x-4 text-black dark:text-white' : 'text-neutral-600 dark:text-neutral-400 group-hover:text-black dark:group-hover:text-white'}`}>
+                  {item.question}
+                </h3>
+                <Plus className={`shrink-0 ml-6 transition-transform duration-500 ${openIndex === idx ? 'rotate-45' : ''}`} size={24} />
+              </button>
+              
+              {/* Área de Resposta (Expandable) */}
+              <AnimatePresence>
+                {openIndex === idx && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <p className="text-lg opacity-80 max-w-2xl pb-10 leading-relaxed">
+                      {item.answer}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </section>
+  );
+}
 
 export default function App() {
   return (
@@ -224,20 +316,8 @@ export default function App() {
         </div>
       </section>
 
-      {/* Dúvidas Section */}
-      <section id="duvidas" className="max-w-3xl mx-auto px-6 py-16">
-        <div className="text-center mb-16">
-          <h3 className="text-sm font-bold tracking-widest uppercase text-neutral-500 mb-4">FAQ</h3>
-          <h2 className="text-4xl md:text-5xl font-medium tracking-tight text-neutral-950">
-            Dúvidas Frequentes
-          </h2>
-        </div>
-        <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-neutral-100">
-          {faqs.map((faq, idx) => (
-            <FAQItem key={idx} question={faq.q} answer={faq.a} />
-          ))}
-        </div>
-      </section>
+      {/* Dúvidas Section Premium */}
+      <FAQSection />
 
       {/* Contato Section */}
       <section id="contato" className="max-w-7xl mx-auto px-6 py-32">
